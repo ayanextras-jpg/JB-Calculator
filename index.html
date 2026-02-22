@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>JB Calculator Premium</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f0f0f">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<style>
+body{
+    font-family:'Segoe UI',sans-serif;
+    background:linear-gradient(135deg,#0f0f0f,#1a1a1a);
+    color:white;
+    text-align:center;
+    margin:0;
+    padding:30px 15px;
+}
+h1{font-size:32px;margin-bottom:20px;}
+.top-buttons button{
+    background:linear-gradient(45deg,#00c6ff,#0072ff);
+    border:none;padding:8px 16px;border-radius:10px;
+    margin:6px;color:white;font-weight:bold;
+}
+.card{
+    background:rgba(255,255,255,0.05);
+    backdrop-filter:blur(10px);
+    border-radius:15px;padding:15px;
+    box-shadow:0 0 20px rgba(0,0,0,0.4);
+}
+.row{
+    display:flex;justify-content:center;align-items:center;
+    gap:8px;margin:12px 0;
+}
+input,select{
+    padding:6px;width:65px;height:38px;
+    background:#1f1f1f;color:white;
+    border:1px solid #333;border-radius:8px;
+    text-align:center;
+}
+.result{
+    width:75px;height:38px;
+    display:flex;justify-content:center;align-items:center;
+    background:#141414;border-radius:8px;
+    font-weight:bold;font-size:18px;
+}
+.deleteBtn{
+    width:38px;height:38px;border:none;
+    border-radius:8px;
+    background:linear-gradient(45deg,#ff0000,#cc0000);
+    color:white;font-size:18px;
+}
+.main-buttons button{
+    background:linear-gradient(45deg,#4e73ff,#1cc88a);
+    border:none;padding:8px 18px;
+    border-radius:10px;margin:10px;
+    color:white;font-weight:bold;
+}
+hr{margin:25px 0;border:0;height:1px;background:#333;}
+.total-wrapper{
+    display:flex;justify-content:center;align-items:center;gap:10px;
+}
+.total-label{font-size:22px;font-weight:bold;}
+.total-box{
+    width:75px;height:38px;
+    display:flex;justify-content:center;align-items:center;
+    background:#141414;border-radius:8px;
+    font-size:18px;font-weight:bold;
+}
+#finalOp{width:55px;height:38px;}
+#finalNum{width:75px;height:38px;}
+#finalResult{
+    margin-top:10px;font-size:22px;
+    color:#00ffcc;font-weight:bold;
+    text-shadow:0 0 8px #00ffcc;
+}
+.copyright{
+    margin-top:40px;opacity:0.6;font-size:13px;
+}
+</style>
+</head>
+<body>
+
+<h1>JB Calculator</h1>
+
+<div class="top-buttons">
+<a href="https://t.me/JackBhai_X" target="_blank">
+<button>👨‍💻 Developer</button>
+</a>
+<a href="https://t.me/Axr_earning" target="_blank">
+<button>📢 Telegram Channel</button>
+</a>
+</div>
+
+<div class="card">
+<div id="calculator"></div>
+</div>
+
+<div class="main-buttons">
+<button onclick="addRow()">➕ Add Row</button>
+<button onclick="copyCalculation()">📋 Copy</button>
+</div>
+
+<hr>
+
+<div class="total-wrapper">
+<span class="total-label">Total</span>
+<div class="total-box">
+<span id="total">0</span>
+</div>
+
+<select id="finalOp" onchange="finalCalculate()">
+<option value="+">+</option>
+<option value="-">−</option>
+<option value="*">×</option>
+<option value="/" selected>÷</option>
+</select>
+
+<input type="number" id="finalNum" oninput="finalCalculate()" placeholder="0">
+</div>
+
+<div id="finalResult"></div>
+
+<div class="copyright">
+© 2026 JACK BHAI ALL RIGHTS RESERVED
+</div>
+
+<script>
+
+function formatNumber(num){
+if(Number.isInteger(num)) return num;
+return parseFloat(num.toFixed(6));
+}
+
+function addRow(){
+const div=document.createElement("div");
+div.className="row";
+
+div.innerHTML=`
+<select class="chainOp" tabindex="-1" onchange="calculate()">
+<option value="+" selected>+</option>
+<option value="-">−</option>
+<option value="*">×</option>
+<option value="/">÷</option>
+</select>
+
+<input type="number" class="num1" inputmode="decimal" oninput="calculate()">
+
+<select class="innerOp" tabindex="-1" onchange="calculate()">
+<option value="+">+</option>
+<option value="-">−</option>
+<option value="*" selected>×</option>
+<option value="/">÷</option>
+</select>
+
+<input type="number" class="num2" inputmode="decimal" oninput="calculate()">
+
+<div class="result">0</div>
+
+<button class="deleteBtn" tabindex="-1" onclick="deleteRow(this)">✖</button>
+`;
+
+document.getElementById("calculator").appendChild(div);
+setupInputNavigation();
+}
+
+function setupInputNavigation(){
+const inputs=document.querySelectorAll(".num1, .num2");
+inputs.forEach((input,index)=>{
+input.onkeydown=function(e){
+if(e.key==="Enter"){
+e.preventDefault();
+if(index+1 < inputs.length){
+inputs[index+1].focus();
+}else{
+addRow();
+setTimeout(()=>{
+document.querySelectorAll(".num1")[inputs.length]?.focus();
+},100);
+}
+}
+};
+});
+}
+
+function deleteRow(btn){
+btn.parentElement.remove();
+calculate();
+}
+
+function calculate(){
+const rows=document.querySelectorAll(".row");
+let total=0;
+
+rows.forEach((row,index)=>{
+let num1=parseFloat(row.querySelector(".num1").value)||0;
+let num2=parseFloat(row.querySelector(".num2").value)||0;
+let innerOp=row.querySelector(".innerOp").value;
+
+let rowResult=0;
+switch(innerOp){
+case '+': rowResult=num1+num2; break;
+case '-': rowResult=num1-num2; break;
+case '*': rowResult=num1*num2; break;
+case '/': rowResult=num2!==0?num1/num2:0; break;
+}
+
+rowResult=formatNumber(rowResult);
+row.querySelector(".result").innerText=rowResult;
+total=index===0?rowResult:total+rowResult;
+});
+
+document.getElementById("total").innerText=formatNumber(total);
+finalCalculate();
+}
+
+function finalCalculate(){
+let total=parseFloat(document.getElementById("total").innerText)||0;
+let finalNum=parseFloat(document.getElementById("finalNum").value);
+let op=document.getElementById("finalOp").value;
+
+if(isNaN(finalNum)){
+document.getElementById("finalResult").innerText="";
+return;
+}
+
+let result=total;
+switch(op){
+case '+': result=total+finalNum; break;
+case '-': result=total-finalNum; break;
+case '*': result=total*finalNum; break;
+case '/': result=finalNum!==0?total/finalNum:0; break;
+}
+
+document.getElementById("finalResult").innerText="= "+formatNumber(result);
+}
+
+function copyCalculation(){
+calculate();
+
+const rows=document.querySelectorAll(".row");
+let text="";
+let total=parseFloat(document.getElementById("total").innerText)||0;
+
+rows.forEach(row=>{
+let num1=parseFloat(row.querySelector(".num1").value)||0;
+let num2=parseFloat(row.querySelector(".num2").value)||0;
+let innerOp=row.querySelector(".innerOp").value;
+let symbol=innerOp==="*"?"×":innerOp==="/"?"÷":innerOp;
+
+let rowResult=row.querySelector(".result").innerText;
+text+=`${num1} ${symbol} ${num2} = ${rowResult}\n`;
+});
+
+text+="━━━━━━━━━━━\n";
+
+let finalNum=parseFloat(document.getElementById("finalNum").value);
+let op=document.getElementById("finalOp").value;
+
+if(!isNaN(finalNum)){
+let final=parseFloat(document.getElementById("finalResult").innerText.replace("=",""))||0;
+let symbol=op==="*"?"×":op==="/"?"÷":op;
+text+=`= ${total} ${symbol} ${finalNum}\n`;
+text+=`= ${final}`;
+}else{
+text+=`= ${total}`;
+}
+
+navigator.clipboard.writeText(text);
+alert("Copied ✅");
+}
+
+addRow();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js");
+  });
+}
+
+</script>
+
+</body>
+</html>
