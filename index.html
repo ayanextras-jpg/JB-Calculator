@@ -138,7 +138,7 @@ const div=document.createElement("div");
 div.className="row";
 
 div.innerHTML=`
-<select class="chainOp" tabindex="-1" onchange="calculate()">
+<select class="chainOp" onchange="calculate()" tabindex="-1">
 <option value="+" selected>+</option>
 <option value="-">−</option>
 <option value="*">×</option>
@@ -147,7 +147,7 @@ div.innerHTML=`
 
 <input type="number" class="num1" inputmode="decimal" oninput="calculate()">
 
-<select class="innerOp" tabindex="-1" onchange="calculate()">
+<select class="innerOp" onchange="calculate()" tabindex="-1">
 <option value="+">+</option>
 <option value="-">−</option>
 <option value="*" selected>×</option>
@@ -158,7 +158,7 @@ div.innerHTML=`
 
 <div class="result">0</div>
 
-<button class="deleteBtn" tabindex="-1" onclick="deleteRow(this)">✖</button>
+<button class="deleteBtn" onclick="deleteRow(this)" tabindex="-1">✖</button>
 `;
 
 document.getElementById("calculator").appendChild(div);
@@ -167,17 +167,23 @@ setupInputNavigation();
 
 function setupInputNavigation(){
 const inputs=document.querySelectorAll(".num1, .num2");
+
 inputs.forEach((input,index)=>{
 input.onkeydown=function(e){
 if(e.key==="Enter"){
 e.preventDefault();
+
 if(index+1 < inputs.length){
-inputs[index+1].focus();
+    inputs[index+1].focus();
 }else{
-addRow();
-setTimeout(()=>{
-document.querySelectorAll(".num1")[inputs.length]?.focus();
-},100);
+    // Last input হলে নতুন row add
+    addRow();
+
+    setTimeout(()=>{
+        // নতুন row এর প্রথম num1 এ focus দাও
+        const allNum1=document.querySelectorAll(".num1");
+        allNum1[allNum1.length-1].focus();
+    },100);
 }
 }
 };
@@ -197,8 +203,10 @@ rows.forEach((row,index)=>{
 let num1=parseFloat(row.querySelector(".num1").value)||0;
 let num2=parseFloat(row.querySelector(".num2").value)||0;
 let innerOp=row.querySelector(".innerOp").value;
+let chainOp=row.querySelector(".chainOp").value;
 
 let rowResult=0;
+
 switch(innerOp){
 case '+': rowResult=num1+num2; break;
 case '-': rowResult=num1-num2; break;
@@ -206,9 +214,18 @@ case '*': rowResult=num1*num2; break;
 case '/': rowResult=num2!==0?num1/num2:0; break;
 }
 
-rowResult=formatNumber(rowResult);
-row.querySelector(".result").innerText=rowResult;
-total=index===0?rowResult:total+rowResult;
+row.querySelector(".result").innerText=formatNumber(rowResult);
+
+if(index===0){
+total=rowResult;
+}else{
+switch(chainOp){
+case '+': total+=rowResult; break;
+case '-': total-=rowResult; break;
+case '*': total*=rowResult; break;
+case '/': total=rowResult!==0?total/rowResult:total; break;
+}
+}
 });
 
 document.getElementById("total").innerText=formatNumber(total);
@@ -226,6 +243,7 @@ return;
 }
 
 let result=total;
+
 switch(op){
 case '+': result=total+finalNum; break;
 case '-': result=total-finalNum; break;
@@ -243,29 +261,28 @@ const rows=document.querySelectorAll(".row");
 let text="";
 let total=parseFloat(document.getElementById("total").innerText)||0;
 
-rows.forEach(row=>{
+rows.forEach((row,index)=>{
 let num1=parseFloat(row.querySelector(".num1").value)||0;
 let num2=parseFloat(row.querySelector(".num2").value)||0;
 let innerOp=row.querySelector(".innerOp").value;
-let symbol=innerOp==="*"?"×":innerOp==="/"?"÷":innerOp;
+let chainOp=row.querySelector(".chainOp").value;
 
+let symbol=innerOp==="*"?"×":innerOp==="/"?"÷":innerOp;
 let rowResult=row.querySelector(".result").innerText;
+
+if(index===0){
 text+=`${num1} ${symbol} ${num2} = ${rowResult}\n`;
+}else{
+if(chainOp==='-'){
+text+=`${num1} ${symbol} ${num2} = ${rowResult} (-)\n`;
+}else{
+text+=`${num1} ${symbol} ${num2} = ${rowResult}\n`;
+}
+}
 });
 
-text+="━━━━━━━━━━━\n";
-
-let finalNum=parseFloat(document.getElementById("finalNum").value);
-let op=document.getElementById("finalOp").value;
-
-if(!isNaN(finalNum)){
-let final=parseFloat(document.getElementById("finalResult").innerText.replace("=",""))||0;
-let symbol=op==="*"?"×":op==="/"?"÷":op;
-text+=`= ${total} ${symbol} ${finalNum}\n`;
-text+=`= ${final}`;
-}else{
+text+="━━━Total━━━\n";
 text+=`= ${total}`;
-}
 
 navigator.clipboard.writeText(text);
 alert("Copied ✅");
@@ -274,9 +291,9 @@ alert("Copied ✅");
 addRow();
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js");
-  });
+window.addEventListener("load", () => {
+navigator.serviceWorker.register("./sw.js");
+});
 }
 
 </script>
